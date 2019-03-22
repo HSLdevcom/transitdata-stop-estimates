@@ -13,9 +13,9 @@ public class PubtransData {
 
     private static final Logger log = LoggerFactory.getLogger(PubtransData.class);
 
-    public PubtransTableProtos.Common common;
-    public PubtransTableProtos.DOITripInfo tripInfo;
-    public InternalMessages.StopEstimate.Type eventType;
+    private PubtransTableProtos.Common common;
+    private PubtransTableProtos.DOITripInfo tripInfo;
+    private InternalMessages.StopEstimate.Type eventType;
 
     public PubtransData(InternalMessages.StopEstimate.Type eventType, PubtransTableProtos.Common common, PubtransTableProtos.DOITripInfo tripInfo) {
         this.tripInfo = tripInfo;
@@ -51,6 +51,43 @@ public class PubtransData {
             log.error("Failed to parse PubtransData from schema " + schema.toString(), e);
             return Optional.empty();
         }
+    }
+
+    public boolean isValid() {
+        return validateCommon(common) && validateTripInfo(tripInfo);
+    }
+
+    static boolean validateCommon(PubtransTableProtos.Common common) {
+        if (common == null) {
+            log.error("No Common, discarding message");
+            return false;
+        }
+        if (!common.hasIsTargetedAtJourneyPatternPointGid()) {
+            log.error("No JourneyPatternPointGid, message discarded");
+            return false;
+        }
+        if (!common.hasTargetUtcDateTimeMs()) {
+            log.error("No TargetDatetime, message discarded");
+            return false;
+        }
+        if (common.getType() == 0) {
+            log.info("Event is for a via point, message discarded");
+            return false;
+        }
+        return true;
+    }
+
+    static boolean validateTripInfo(PubtransTableProtos.DOITripInfo tripInfo) {
+        if (tripInfo == null) {
+            log.error("No tripInfo, discarding message");
+            return false;
+        }
+
+        if (!tripInfo.hasRouteId()) {
+            log.error("TripInfo has no RouteId, discarding message");
+            return false;
+        }
+        return true;
     }
 
     /**

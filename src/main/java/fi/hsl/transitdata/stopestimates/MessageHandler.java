@@ -27,13 +27,17 @@ public class MessageHandler implements IMessageHandler {
     public void handleMessage(Message received) throws Exception {
         try {
             Optional<TransitdataSchema> schema = TransitdataSchema.parseFromPulsarMessage(received);
-            Optional<PubtransData> data = schema.flatMap(s -> PubtransData.parsePubtransData(s, received.getData()));
+            Optional<PubtransData> maybeData = schema.flatMap(s -> PubtransData.parsePubtransData(s, received.getData()));
 
-            if (data.isPresent()) {
-                final long timestamp = received.getEventTime();
+            if (maybeData.isPresent()) {
+                PubtransData data = maybeData.get();
 
-                InternalMessages.StopEstimate converted = data.get().toStopEstimate();
-                sendPulsarMessage(received.getMessageId(), converted, timestamp, received.getKey());
+                if (data.isValid()) {
+                    final long timestamp = received.getEventTime();
+
+                    InternalMessages.StopEstimate converted = data.toStopEstimate();
+                    sendPulsarMessage(received.getMessageId(), converted, timestamp, received.getKey());
+                }
             }
             else {
                 log.warn("Received unexpected schema, ignoring.");
