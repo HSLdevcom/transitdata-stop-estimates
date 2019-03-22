@@ -6,10 +6,10 @@ import fi.hsl.common.transitdata.TransitdataProperties;
 import fi.hsl.common.transitdata.TransitdataProperties.*;
 import fi.hsl.common.transitdata.TransitdataSchema;
 import fi.hsl.common.transitdata.proto.InternalMessages;
+import fi.hsl.transitdata.stopestimates.models.PubtransData;
 import org.apache.pulsar.client.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Optional;
 
 
@@ -27,16 +27,12 @@ public class MessageHandler implements IMessageHandler {
     public void handleMessage(Message received) throws Exception {
         try {
             Optional<TransitdataSchema> schema = TransitdataSchema.parseFromPulsarMessage(received);
-            boolean schemaOk = schema.filter(s ->
-                    s.schema == ProtobufSchema.PubtransRoiDeparture ||
-                    s.schema == ProtobufSchema.PubtransRoiArrival
-            ).isPresent();
+            Optional<PubtransData> data = schema.flatMap(s -> PubtransData.parsePubtransData(s, received.getData()));
 
-            if (schemaOk) {
+            if (data.isPresent()) {
                 final long timestamp = received.getEventTime();
-                byte[] data = received.getData();
 
-                InternalMessages.StopEstimate converted = parseData(data, timestamp);
+                InternalMessages.StopEstimate converted = data.get().toStopEstimate();
                 sendPulsarMessage(received.getMessageId(), converted, timestamp, received.getKey());
             }
             else {
