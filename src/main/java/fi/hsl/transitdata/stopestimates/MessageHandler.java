@@ -69,6 +69,8 @@ public class MessageHandler implements IMessageHandler {
                 .key(key)
                 .eventTime(timestamp)
                 .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, ProtobufSchema.InternalMessagesStopEstimate.toString())
+                .property(TransitdataProperties.KEY_SCHEMA_VERSION, Integer.toString(estimate.getSchemaVersion()))
+                .property(TransitdataProperties.KEY_DVJ_ID, estimate.getTripInfo().getTripId()) // TODO remove once TripUpdateProcessor won't need it anymore
                 .value(estimate.toByteArray())
                 .sendAsync()
                 .whenComplete((MessageId id, Throwable t) -> {
