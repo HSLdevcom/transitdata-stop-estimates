@@ -31,11 +31,11 @@ public class MessageHandler implements IMessageHandler {
             final Optional<List<InternalMessages.StopEstimate>> maybeStopEstimates = factory.toStopEstimates(received);
 
             if (maybeStopEstimates.isPresent()) {
+                final MessageId messageId = received.getMessageId();
                 final long timestamp = received.getEventTime();
+                final String key = received.getKey();
                 final List<InternalMessages.StopEstimate> stopEstimates = maybeStopEstimates.get();
-                stopEstimates.forEach(stopEstimate -> {
-                    sendPulsarMessage(received.getMessageId(), stopEstimate, timestamp, received.getKey());
-                });
+                stopEstimates.forEach(stopEstimate -> sendPulsarMessage(messageId, stopEstimate, timestamp, key));
             } else {
                 log.warn("Received unexpected schema, ignoring.");
                 ack(received.getMessageId()); //Ack so we don't receive it again

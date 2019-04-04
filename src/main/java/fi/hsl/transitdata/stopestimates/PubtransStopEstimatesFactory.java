@@ -20,15 +20,13 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
     public Optional<List<InternalMessages.StopEstimate>> toStopEstimates(final Message message) {
         try {
             Optional<TransitdataSchema> schema = TransitdataSchema.parseFromPulsarMessage(message);
-            Optional<PubtransData> maybeData = schema.flatMap(s -> PubtransStopEstimatesFactory.parsePubtransData(s, message.getData()));
+            Optional<PubtransData> maybeData = schema.flatMap(s -> parsePubtransData(s, message.getData()));
 
             if (maybeData.isPresent()) {
                 PubtransData data = maybeData.get();
 
-                if (PubtransStopEstimatesFactory.validate(data)) {
-                    final long timestamp = message.getEventTime();
-
-                    InternalMessages.StopEstimate converted = PubtransStopEstimatesFactory.toStopEstimate(data);
+                if (validate(data)) {
+                    InternalMessages.StopEstimate converted = toStopEstimate(data);
                     return Optional.of(Arrays.asList(converted));
                 }
             }

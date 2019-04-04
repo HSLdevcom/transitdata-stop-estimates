@@ -40,7 +40,6 @@ public class MetroScheduleStopEstimatesFactory implements IStopEstimatesFactory 
         try {
             Optional<TransitdataSchema> maybeSchema = TransitdataSchema.parseFromPulsarMessage(message);
             if (maybeSchema.isPresent()) {
-                final TransitdataSchema schema = maybeSchema.get();
                 final byte[] data = message.getData();
                 final Mqtt.RawMessage mqttMessage = Mqtt.RawMessage.parseFrom(data);
                 final String topic = mqttMessage.getTopic();
