@@ -144,12 +144,12 @@ public class MetroScheduleStopEstimatesFactory implements IStopEstimatesFactory 
         // EstimatedTimeUtcMs
         switch (type) {
             case ARRIVAL:
-                builder.setEstimatedTimeUtcMs(ZonedDateTime.parse(routeRow.arrivalTimeForecast).toEpochSecond());
-                builder.setScheduledTimeUtcMs(ZonedDateTime.parse(routeRow.arrivalTimePlanned).toEpochSecond());
+                builder.setEstimatedTimeUtcMs(ZonedDateTime.parse(routeRow.arrivalTimeForecast).toEpochSecond() * 1000);
+                builder.setScheduledTimeUtcMs(ZonedDateTime.parse(routeRow.arrivalTimePlanned).toEpochSecond() * 1000);
                 break;
             case DEPARTURE:
-                builder.setEstimatedTimeUtcMs(ZonedDateTime.parse(routeRow.departureTimeForecast).toEpochSecond());
-                builder.setScheduledTimeUtcMs(ZonedDateTime.parse(routeRow.departureTimePlanned).toEpochSecond());
+                builder.setEstimatedTimeUtcMs(ZonedDateTime.parse(routeRow.departureTimeForecast).toEpochSecond() * 1000);
+                builder.setScheduledTimeUtcMs(ZonedDateTime.parse(routeRow.departureTimePlanned).toEpochSecond() * 1000);
                 break;
             default:
                 log.warn("Unrecognized type {}.", type);
