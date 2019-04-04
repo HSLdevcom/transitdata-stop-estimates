@@ -13,19 +13,22 @@ public class Main {
 
     public static void main(String[] args) {
         log.info("Starting Stop Estimate Parser");
-        Optional<String> sourceType = ConfigUtils.getEnv("SOURCE");
-        Config config = null;
-        if (sourceType.isPresent()) {
-            config = getConfig(sourceType.get());
+        Optional<String> maybeSourceType = ConfigUtils.getEnv("SOURCE");
+
+        String sourceType;
+        if (maybeSourceType.isPresent()) {
+            sourceType = maybeSourceType.get();
         } else {
-            config = ConfigParser.createConfig();
+            throw new IllegalArgumentException(String.format("Failed to get source type. Env var SOURCE may be missing."));
         }
+        Config config = getConfig(sourceType);
 
         try (PulsarApplication app = PulsarApplication.newInstance(config)) {
 
             PulsarApplicationContext context = app.getContext();
 
-            MessageHandler router = new MessageHandler(context);
+            final IStopEstimatesFactory factory = getFactory(sourceType, context);
+            MessageHandler router = new MessageHandler(context, factory);
 
             log.info("Start handling the messages");
             app.launchWithHandler(router);
@@ -39,6 +42,14 @@ public class Main {
             case "ptroi": return ConfigParser.createConfig("ptroi.conf");
             case "metro-schedule": return ConfigParser.createConfig("metro-schedule.conf");
             default: throw new IllegalArgumentException(String.format("Failed to get Config specified by env var SOURCE=%s.", source));
+        }
+    }
+
+    private static IStopEstimatesFactory getFactory(final String source, final PulsarApplicationContext context) {
+        switch (source) {
+            case "ptroi": return new PubtransStopEstimatesFactory();
+            case "metro-schedule": return new MetroScheduleStopEstimatesFactory(context);
+            default: throw new IllegalArgumentException(String.format("Failed to get IStopEstimatesFactory specified by env var SOURCE=%s.", source));
         }
     }
 }
