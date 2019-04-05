@@ -50,8 +50,8 @@ public class MetroScheduleStopEstimatesFactory implements IStopEstimatesFactory 
                 if (maybeTopicParams.isPresent() && maybeSchedule.isPresent()) {
                     final MetroScheduleTopicParameters topicParams = maybeTopicParams.get();
                     final MetroSchedule schedule = maybeSchedule.get();
-                    final long lastModifiedUtcMs = mqttMessage.getLastModifiedUtcDateTimeMs();
-                    List<InternalMessages.StopEstimate> stopEstimates = toStopEstimates(topicParams, schedule, lastModifiedUtcMs);
+                    final long timestamp = message.getEventTime();
+                    List<InternalMessages.StopEstimate> stopEstimates = toStopEstimates(topicParams, schedule, timestamp);
                     return Optional.of(stopEstimates);
                 }
             }
@@ -61,7 +61,7 @@ public class MetroScheduleStopEstimatesFactory implements IStopEstimatesFactory 
         return Optional.empty();
     }
 
-    private List<InternalMessages.StopEstimate> toStopEstimates(final MetroScheduleTopicParameters topicParams, final MetroSchedule schedule, final long lastModifiedUtcMs) throws Exception {
+    private List<InternalMessages.StopEstimate> toStopEstimates(final MetroScheduleTopicParameters topicParams, final MetroSchedule schedule, final long timestamp) throws Exception {
         final String[] shortNames = schedule.routeName.split("-");
         if (shortNames.length != 2) {
             throw new IllegalArgumentException(String.format("Failed to parse metro schedule route name %s.", schedule.routeName));
@@ -82,18 +82,18 @@ public class MetroScheduleStopEstimatesFactory implements IStopEstimatesFactory 
                         // TODO: implement routeRow.toString()?
                         throw new IllegalArgumentException(String.format("Failed to find stop sequence for metro schedule route row %s.", routeRow));
                     }
-                    return toStopEstimates(routeRow, stopSequence, metroId, lastModifiedUtcMs, joreDirection).stream();
+                    return toStopEstimates(routeRow, stopSequence, metroId, timestamp, joreDirection).stream();
                 })
                 .collect(Collectors.toList());
     }
 
-    private List<InternalMessages.StopEstimate> toStopEstimates(final MetroScheduleRouteRow routeRow, final int stopSequence, final String metroId, final long lastModifiedUtcMs, final int joreDirection) {
-        final InternalMessages.StopEstimate arrivalStopEstimate = toStopEstimate(routeRow, stopSequence, metroId, lastModifiedUtcMs, InternalMessages.StopEstimate.Type.ARRIVAL, joreDirection);
-        final InternalMessages.StopEstimate departureStopEstimate = toStopEstimate(routeRow, stopSequence, metroId, lastModifiedUtcMs, InternalMessages.StopEstimate.Type.DEPARTURE, joreDirection);
+    private List<InternalMessages.StopEstimate> toStopEstimates(final MetroScheduleRouteRow routeRow, final int stopSequence, final String metroId, final long timestamp, final int joreDirection) {
+        final InternalMessages.StopEstimate arrivalStopEstimate = toStopEstimate(routeRow, stopSequence, metroId, timestamp, InternalMessages.StopEstimate.Type.ARRIVAL, joreDirection);
+        final InternalMessages.StopEstimate departureStopEstimate = toStopEstimate(routeRow, stopSequence, metroId, timestamp, InternalMessages.StopEstimate.Type.DEPARTURE, joreDirection);
         return Arrays.asList(arrivalStopEstimate, departureStopEstimate);
     }
 
-    private InternalMessages.StopEstimate toStopEstimate(final MetroScheduleRouteRow routeRow, final int stopSequence, final String metroId, final long lastModifiedUtcMs, final InternalMessages.StopEstimate.Type type, final int joreDirection) {
+    private InternalMessages.StopEstimate toStopEstimate(final MetroScheduleRouteRow routeRow, final int stopSequence, final String metroId, final long timestamp, final InternalMessages.StopEstimate.Type type, final int joreDirection) {
         InternalMessages.StopEstimate.Builder builder = InternalMessages.StopEstimate.newBuilder();
         builder.setSchemaVersion(builder.getSchemaVersion());
 
@@ -157,7 +157,7 @@ public class MetroScheduleStopEstimatesFactory implements IStopEstimatesFactory 
         }
 
         // LastModifiedUtcMs
-        builder.setLastModifiedUtcMs(lastModifiedUtcMs);
+        builder.setLastModifiedUtcMs(timestamp);
 
         return builder.build();
     }
