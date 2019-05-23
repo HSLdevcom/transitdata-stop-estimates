@@ -107,8 +107,15 @@ public class PubtransData {
         builder.setStopId(tripInfo.getStopId());
         builder.setStopSequence(common.getJourneyPatternSequenceNumber());
 
+
+        // TODO: 2019-05-23: Commenting code as temporary fix because OTP doesn't handle SKIPPED stop estimates well
+        // TODO: Uncomment and delete code below when OTP is fixed
+        // InternalMessages.StopEstimate.Status scheduledStatus = (common.getState() == 3L) ?
+        //    InternalMessages.StopEstimate.Status.SKIPPED :
+        //    InternalMessages.StopEstimate.Status.SCHEDULED;
+
         InternalMessages.StopEstimate.Status scheduledStatus = (common.getState() == 3L) ?
-                InternalMessages.StopEstimate.Status.SKIPPED :
+                InternalMessages.StopEstimate.Status.SCHEDULED :
                 InternalMessages.StopEstimate.Status.SCHEDULED;
 
         builder.setStatus(scheduledStatus);
