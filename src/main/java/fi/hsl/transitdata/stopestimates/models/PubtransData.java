@@ -107,9 +107,7 @@ public class PubtransData {
         builder.setStopId(tripInfo.getStopId());
         builder.setStopSequence(common.getJourneyPatternSequenceNumber());
 
-        InternalMessages.StopEstimate.Status scheduledStatus = (common.getState() == 3L) ?
-                InternalMessages.StopEstimate.Status.SKIPPED :
-                InternalMessages.StopEstimate.Status.SCHEDULED;
+        InternalMessages.StopEstimate.Status scheduledStatus = InternalMessages.StopEstimate.Status.SCHEDULED;
 
         builder.setStatus(scheduledStatus);
 
