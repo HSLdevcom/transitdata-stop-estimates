@@ -73,7 +73,7 @@ public class MetroScheduleStopEstimatesFactory implements IStopEstimatesFactory 
             throw new IllegalArgumentException(String.format("Failed to get jore direction from metro stops %s and %s", startStopShortName, endStopShortName));
         }
         final int joreDirection = maybeJoreDirection.get();
-        final String startDatetime = schedule.beginTime;
+        final String startDatetime = floorDateTimeMilliseconds(schedule.beginTime);
         final String metroId = TransitdataProperties.formatMetroId(startStopShortName, startDatetime);
         return schedule.routeRows.stream()
                 .flatMap(routeRow -> {
@@ -85,6 +85,10 @@ public class MetroScheduleStopEstimatesFactory implements IStopEstimatesFactory 
                     return toStopEstimates(routeRow, stopSequence, metroId, timestamp, joreDirection).stream();
                 })
                 .collect(Collectors.toList());
+    }
+
+    private String floorDateTimeMilliseconds(final String dateTime) {
+        return dateTime.replaceAll("\\.\\d{3}Z$", ".000Z");
     }
 
     private List<InternalMessages.StopEstimate> toStopEstimates(final MetroScheduleRouteRow routeRow, final int stopSequence, final String metroId, final long timestamp, final int joreDirection) {
