@@ -54,11 +54,6 @@ public class MessageHandler implements IMessageHandler {
                 .thenRun(() -> {});
     }
 
-    InternalMessages.StopEstimate parseData(byte[] data, long timestamp) throws Exception {
-        //TODO
-        return null;
-    }
-
     private void sendPulsarMessage(MessageId received, InternalMessages.StopEstimate estimate, long timestamp, String key) {
 
         producer.newMessage()
