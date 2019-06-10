@@ -37,6 +37,8 @@ public class MessageHandler implements IMessageHandler {
 
                     InternalMessages.StopEstimate converted = data.toStopEstimate();
                     sendPulsarMessage(received.getMessageId(), converted, timestamp, received.getKey());
+                } else {
+                    ack(received.getMessageId()); //Ack so we don't receive it again
                 }
             }
             else {
