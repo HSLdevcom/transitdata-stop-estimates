@@ -27,7 +27,7 @@ public class Main {
 
             PulsarApplicationContext context = app.getContext();
 
-            final IStopEstimatesFactory factory = getFactory(sourceType, context);
+            final IStopEstimatesFactory factory = getFactory(sourceType);
             MessageHandler router = new MessageHandler(context, factory);
 
             log.info("Start handling the messages");
@@ -40,15 +40,15 @@ public class Main {
     private static Config getConfig(final String source) {
         switch (source) {
             case "ptroi": return ConfigParser.createConfig("ptroi.conf");
-            case "metro-schedule": return ConfigParser.createConfig("metro-schedule.conf");
+            case "metro-estimate": return ConfigParser.createConfig("metro-estimate.conf");
             default: throw new IllegalArgumentException(String.format("Failed to get Config specified by env var SOURCE=%s.", source));
         }
     }
 
-    private static IStopEstimatesFactory getFactory(final String source, final PulsarApplicationContext context) {
+    private static IStopEstimatesFactory getFactory(final String source) {
         switch (source) {
             case "ptroi": return new PubtransStopEstimatesFactory();
-            case "metro-schedule": return new MetroScheduleStopEstimatesFactory(context);
+            case "metro-estimate": return new MetroEstimateStopEstimatesFactory();
             default: throw new IllegalArgumentException(String.format("Failed to get IStopEstimatesFactory specified by env var SOURCE=%s.", source));
         }
     }
