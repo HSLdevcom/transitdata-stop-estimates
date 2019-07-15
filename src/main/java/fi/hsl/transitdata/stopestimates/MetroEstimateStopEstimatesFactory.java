@@ -28,9 +28,9 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
     private List<InternalMessages.StopEstimate> toStopEstimates(byte[] data, final long timestamp) throws Exception {
         MetroAtsProtos.MetroEstimate metroEstimate = MetroAtsProtos.MetroEstimate.parseFrom(data);
 
-        return metroEstimate.getMetroRowList().stream()
+        return metroEstimate.getMetroRowsList().stream()
                 .flatMap(metroStopEstimate -> {
-                    final int stopSequence = metroEstimate.getMetroRowList().indexOf(metroStopEstimate) + 1;
+                    final int stopSequence = metroEstimate.getMetroRowsList().indexOf(metroStopEstimate) + 1;
                     return toStopEstimates(metroEstimate, metroStopEstimate, stopSequence, timestamp).stream();
                 })
                 .collect(Collectors.toList());
