@@ -69,18 +69,11 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         stopEstimateBuilder.setStopId(metroEstimate.getStartStopNumber());
         stopEstimateBuilder.setStopSequence(stopSequence);
         // Status
-        switch (metroStopEstimate.getRowProgress()) {
-            case SCHEDULED:
-            case INPROGRESS:
-            case COMPLETED:
-                stopEstimateBuilder.setStatus(InternalMessages.StopEstimate.Status.SCHEDULED);
-                break;
-            case CANCELLED:
-                stopEstimateBuilder.setStatus(InternalMessages.StopEstimate.Status.SCHEDULED);
-                break;
-            default:
-                log.warn("Unrecognized status {}.", metroStopEstimate.getRowProgress());
-                break;
+        Optional<InternalMessages.StopEstimate.Status> maybeStopEstimateStatus = getStopEstimateStatus(metroStopEstimate.getRowProgress());
+        if (maybeStopEstimateStatus.isPresent()) {
+            stopEstimateBuilder.setStatus(maybeStopEstimateStatus.get());
+        } else {
+            return Optional.empty();
         }
         stopEstimateBuilder.setType(type);
         // EstimatedTimeUtcMs & ScheduledTimeUtcMs
@@ -114,5 +107,19 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         stopEstimateBuilder.setLastModifiedUtcMs(timestamp);
 
         return Optional.of(stopEstimateBuilder.build());
+    }
+
+    private Optional<InternalMessages.StopEstimate.Status> getStopEstimateStatus(MetroAtsProtos.MetroProgress metroProgress) {
+        switch (metroProgress) {
+            case SCHEDULED:
+            case INPROGRESS:
+            case COMPLETED:
+                return Optional.of(InternalMessages.StopEstimate.Status.SCHEDULED);
+            case CANCELLED:
+                return Optional.of(InternalMessages.StopEstimate.Status.SCHEDULED);
+            default:
+                log.warn("Unrecognized MetroProgress {}.", metroProgress);
+                return Optional.empty();
+        }
     }
 }
