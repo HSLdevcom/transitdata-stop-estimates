@@ -50,7 +50,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
     }
 
     private Optional<InternalMessages.StopEstimate> toStopEstimate(final MetroAtsProtos.MetroEstimate metroEstimate, final MetroAtsProtos.MetroStopEstimate metroStopEstimate, final int stopSequence, final long timestamp, final InternalMessages.StopEstimate.Type type) {
-        InternalMessages.StopEstimate.Builder builder = InternalMessages.StopEstimate.newBuilder();
+        InternalMessages.StopEstimate.Builder stopEstimateBuilder = InternalMessages.StopEstimate.newBuilder();
         InternalMessages.TripInfo.Builder tripBuilder = InternalMessages.TripInfo.newBuilder();
 
         // TripInfo
@@ -64,40 +64,40 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         if (metroEstimate.getJourneySectionprogress().equals(MetroAtsProtos.MetroProgress.CANCELLED)) {
             return Optional.empty();
         }
-        builder.setSchemaVersion(builder.getSchemaVersion());
-        builder.setTripInfo(tripBuilder.build());
-        builder.setStopId(metroEstimate.getStartStopNumber());
-        builder.setStopSequence(stopSequence);
+        stopEstimateBuilder.setSchemaVersion(stopEstimateBuilder.getSchemaVersion());
+        stopEstimateBuilder.setTripInfo(tripBuilder.build());
+        stopEstimateBuilder.setStopId(metroEstimate.getStartStopNumber());
+        stopEstimateBuilder.setStopSequence(stopSequence);
         // Status
         switch (metroStopEstimate.getRowProgress()) {
             case SCHEDULED:
             case INPROGRESS:
             case COMPLETED:
-                builder.setStatus(InternalMessages.StopEstimate.Status.SCHEDULED);
+                stopEstimateBuilder.setStatus(InternalMessages.StopEstimate.Status.SCHEDULED);
                 break;
             case CANCELLED:
-                builder.setStatus(InternalMessages.StopEstimate.Status.SCHEDULED);
+                stopEstimateBuilder.setStatus(InternalMessages.StopEstimate.Status.SCHEDULED);
                 break;
             default:
                 log.warn("Unrecognized status {}.", metroStopEstimate.getRowProgress());
                 break;
         }
-        builder.setType(type);
+        stopEstimateBuilder.setType(type);
         // EstimatedTimeUtcMs & ScheduledTimeUtcMs
         boolean isForecastMissing = false;
         switch (type) {
             case ARRIVAL:
                 if (!metroStopEstimate.getArrivalTimeForecast().isEmpty()) {
-                    builder.setEstimatedTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getArrivalTimeForecast()).toInstant().toEpochMilli());
-                    builder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getArrivalTimePlanned()).toInstant().toEpochMilli());
+                    stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getArrivalTimeForecast()).toInstant().toEpochMilli());
+                    stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getArrivalTimePlanned()).toInstant().toEpochMilli());
                 } else {
                     isForecastMissing = true;
                 }
                 break;
             case DEPARTURE:
                 if (!metroStopEstimate.getDepartureTimeForecast().isEmpty()) {
-                    builder.setEstimatedTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getDepartureTimeForecast()).toInstant().toEpochMilli());
-                    builder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getDepartureTimePlanned()).toInstant().toEpochMilli());
+                    stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getDepartureTimeForecast()).toInstant().toEpochMilli());
+                    stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getDepartureTimePlanned()).toInstant().toEpochMilli());
                 } else {
                     isForecastMissing = true;
                 }
@@ -111,8 +111,8 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         }
 
         // LastModifiedUtcMs
-        builder.setLastModifiedUtcMs(timestamp);
+        stopEstimateBuilder.setLastModifiedUtcMs(timestamp);
 
-        return Optional.of(builder.build());
+        return Optional.of(stopEstimateBuilder.build());
     }
 }
