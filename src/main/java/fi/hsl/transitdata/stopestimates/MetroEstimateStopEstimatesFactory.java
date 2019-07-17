@@ -116,7 +116,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
             case COMPLETED:
                 return Optional.of(InternalMessages.StopEstimate.Status.SCHEDULED);
             case CANCELLED:
-                return Optional.of(InternalMessages.StopEstimate.Status.SCHEDULED);
+                return Optional.of(InternalMessages.StopEstimate.Status.SKIPPED);
             default:
                 log.warn("Unrecognized MetroProgress {}.", metroProgress);
                 return Optional.empty();
