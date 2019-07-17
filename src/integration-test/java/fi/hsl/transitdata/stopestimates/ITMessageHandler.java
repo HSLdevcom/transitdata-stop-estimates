@@ -31,8 +31,10 @@ public class ITMessageHandler extends ITBaseTestSuite  {
             }
         };
         PulsarApplication app = createPulsarApp("integration-test.conf", testId);
-        IMessageHandler handler = new MessageHandler(app.getContext());
-        testPulsarMessageHandler(handler, app, logic, testId);
+        IMessageHandler pubtransMessageHandler = new MessageHandler(app.getContext(), new PubtransStopEstimatesFactory());
+        testPulsarMessageHandler(pubtransMessageHandler, app, logic, testId);
+        IMessageHandler metroEstimateMessageHandler = new MessageHandler(app.getContext(), new MetroEstimateStopEstimatesFactory());
+        testPulsarMessageHandler(metroEstimateMessageHandler, app, logic, testId);
     }
 
     @Test
@@ -53,8 +55,10 @@ public class ITMessageHandler extends ITBaseTestSuite  {
             }
         };
         PulsarApplication app = createPulsarApp("integration-test.conf", testId);
-        IMessageHandler handler = new MessageHandler(app.getContext());
-        testPulsarMessageHandler(handler, app, logic, testId);
+        IMessageHandler pubtransMessageHandler = new MessageHandler(app.getContext(), new PubtransStopEstimatesFactory());
+        testPulsarMessageHandler(pubtransMessageHandler, app, logic, testId);
+        IMessageHandler metroEstimateMessageHandler = new MessageHandler(app.getContext(), new MetroEstimateStopEstimatesFactory());
+        testPulsarMessageHandler(metroEstimateMessageHandler, app, logic, testId);
     }
 
     @Test
@@ -77,8 +81,10 @@ public class ITMessageHandler extends ITBaseTestSuite  {
             }
         };
         PulsarApplication app = createPulsarApp("integration-test.conf", testId);
-        IMessageHandler handler = new MessageHandler(app.getContext());
-        testPulsarMessageHandler(handler, app, logic, testId);
+        IMessageHandler pubtransMessageHandler = new MessageHandler(app.getContext(), new PubtransStopEstimatesFactory());
+        testPulsarMessageHandler(pubtransMessageHandler, app, logic, testId);
+        IMessageHandler metroEstimateMessageHandler = new MessageHandler(app.getContext(), new MetroEstimateStopEstimatesFactory());
+        testPulsarMessageHandler(metroEstimateMessageHandler, app, logic, testId);
     }
 
     static void sendPulsarMessage(Producer<byte[]> producer, long dvjId, byte[] payload, long timestampEpochMs, TransitdataProperties.ProtobufSchema schema) throws Exception {

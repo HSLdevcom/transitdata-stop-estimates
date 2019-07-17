@@ -4,49 +4,42 @@ import fi.hsl.common.pulsar.IMessageHandler;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
 import fi.hsl.common.transitdata.TransitdataProperties.*;
-import fi.hsl.common.transitdata.TransitdataSchema;
 import fi.hsl.common.transitdata.proto.InternalMessages;
-import fi.hsl.transitdata.stopestimates.models.PubtransData;
 import org.apache.pulsar.client.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Optional;
 
+import java.util.List;
+import java.util.Optional;
 
 public class MessageHandler implements IMessageHandler {
     private static final Logger log = LoggerFactory.getLogger(MessageHandler.class);
 
     private Consumer<byte[]> consumer;
     private Producer<byte[]> producer;
+    private IStopEstimatesFactory factory;
 
-    public MessageHandler(PulsarApplicationContext context) {
+    public MessageHandler(PulsarApplicationContext context, final IStopEstimatesFactory factory) {
         consumer = context.getConsumer();
         producer = context.getProducer();
+        this.factory = factory;
     }
 
     public void handleMessage(Message received) throws Exception {
         try {
-            Optional<TransitdataSchema> schema = TransitdataSchema.parseFromPulsarMessage(received);
-            Optional<PubtransData> maybeData = schema.flatMap(s -> PubtransData.parsePubtransData(s, received.getData()));
+            final Optional<List<InternalMessages.StopEstimate>> maybeStopEstimates = factory.toStopEstimates(received);
 
-            if (maybeData.isPresent()) {
-                PubtransData data = maybeData.get();
-
-                if (data.isValid()) {
-                    final long timestamp = received.getEventTime();
-
-                    InternalMessages.StopEstimate converted = data.toStopEstimate();
-                    sendPulsarMessage(received.getMessageId(), converted, timestamp, received.getKey());
-                } else {
-                    ack(received.getMessageId()); //Ack so we don't receive it again
-                }
-            }
-            else {
+            if (maybeStopEstimates.isPresent()) {
+                final MessageId messageId = received.getMessageId();
+                final long timestamp = received.getEventTime();
+                final String key = received.getKey();
+                final List<InternalMessages.StopEstimate> stopEstimates = maybeStopEstimates.get();
+                stopEstimates.forEach(stopEstimate -> sendPulsarMessage(messageId, stopEstimate, timestamp, key));
+            } else {
                 log.warn("Received unexpected schema, ignoring.");
                 ack(received.getMessageId()); //Ack so we don't receive it again
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Exception while handling message", e);
         }
     }
