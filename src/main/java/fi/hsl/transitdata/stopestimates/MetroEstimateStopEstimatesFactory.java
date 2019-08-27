@@ -66,7 +66,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         }
         stopEstimateBuilder.setSchemaVersion(stopEstimateBuilder.getSchemaVersion());
         stopEstimateBuilder.setTripInfo(tripBuilder.build());
-        stopEstimateBuilder.setStopId(metroEstimate.getStartStopNumber());
+        stopEstimateBuilder.setStopId(metroStopEstimate.getStopNumber());
         stopEstimateBuilder.setStopSequence(stopSequence);
         // Status
         Optional<InternalMessages.StopEstimate.Status> maybeStopEstimateStatus = getStopEstimateStatus(metroStopEstimate.getRowProgress());
