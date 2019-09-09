@@ -116,6 +116,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
             case COMPLETED:
             case CANCELLED:
                 return Optional.of(InternalMessages.StopEstimate.Status.SCHEDULED);
+            //Do not produce SKIPPED stop estimates, as they are currently not working properly
             /*case CANCELLED:
                 return Optional.of(InternalMessages.StopEstimate.Status.SKIPPED);*/
             default:
