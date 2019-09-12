@@ -33,6 +33,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                     final int stopSequence = metroEstimate.getMetroRowsList().indexOf(metroStopEstimate) + 1;
                     return toStopEstimates(metroEstimate, metroStopEstimate, stopSequence, timestamp).stream();
                 })
+                //TODO: if there is only a single stop estimate with SKIPPED status, assume that it is a technical problem with metro ATS and change it to SCHEDULED
                 .collect(Collectors.toList());
     }
 
