@@ -74,6 +74,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         if (maybeStopEstimateStatus.isPresent()) {
             stopEstimateBuilder.setStatus(maybeStopEstimateStatus.get());
         } else {
+            log.warn("Stop estimate had no rowProgress, stop number: {}, route name: {}, operating day: {}, start time: {}, direction: {}", metroStopEstimate.getStopNumber(), metroEstimate.getRouteName(), metroEstimate.getOperatingDay(), metroEstimate.getStartTime(), metroEstimate.getDirection());
             return Optional.empty();
         }
         stopEstimateBuilder.setType(type);
