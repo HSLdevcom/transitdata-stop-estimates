@@ -33,6 +33,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                     final int stopSequence = metroEstimate.getMetroRowsList().indexOf(metroStopEstimate) + 1;
                     return toStopEstimates(metroEstimate, metroStopEstimate, stopSequence, timestamp).stream();
                 })
+                //TODO: if there is only a single stop estimate with SKIPPED status, assume that it is a technical problem with metro ATS and change it to SCHEDULED
                 .collect(Collectors.toList());
     }
 
@@ -73,6 +74,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         if (maybeStopEstimateStatus.isPresent()) {
             stopEstimateBuilder.setStatus(maybeStopEstimateStatus.get());
         } else {
+            log.warn("Stop estimate had no rowProgress, stop number: {}, route name: {}, operating day: {}, start time: {}, direction: {}", metroStopEstimate.getStopNumber(), metroEstimate.getRouteName(), metroEstimate.getOperatingDay(), metroEstimate.getStartTime(), metroEstimate.getDirection());
             return Optional.empty();
         }
         stopEstimateBuilder.setType(type);
@@ -114,9 +116,11 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
             case SCHEDULED:
             case INPROGRESS:
             case COMPLETED:
-                return Optional.of(InternalMessages.StopEstimate.Status.SCHEDULED);
             case CANCELLED:
-                return Optional.of(InternalMessages.StopEstimate.Status.SKIPPED);
+                return Optional.of(InternalMessages.StopEstimate.Status.SCHEDULED);
+            //Do not produce SKIPPED stop estimates, as they are currently not working properly
+            /*case CANCELLED:
+                return Optional.of(InternalMessages.StopEstimate.Status.SKIPPED);*/
             default:
                 log.warn("Unrecognized MetroProgress {}.", metroProgress);
                 return Optional.empty();
