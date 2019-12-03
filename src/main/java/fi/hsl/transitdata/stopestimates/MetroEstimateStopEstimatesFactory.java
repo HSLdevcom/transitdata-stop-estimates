@@ -27,6 +27,11 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
     private List<InternalMessages.StopEstimate> toStopEstimates(byte[] data, final long timestamp) throws Exception {
         MetroAtsProtos.MetroEstimate metroEstimate = MetroAtsProtos.MetroEstimate.parseFrom(data);
 
+        //T type trains are not passenger trains -> do not produce estimates
+        if (metroEstimate.hasTrainType() && metroEstimate.getTrainType() == MetroAtsProtos.MetroTrainType.T) {
+            return Collections.emptyList();
+        }
+
         List<InternalMessages.StopEstimate> metroStopEstimates = metroEstimate.getMetroRowsList().stream()
                 .flatMap(metroStopEstimate -> {
                     final int stopSequence = metroEstimate.getMetroRowsList().indexOf(metroStopEstimate) + 1;
