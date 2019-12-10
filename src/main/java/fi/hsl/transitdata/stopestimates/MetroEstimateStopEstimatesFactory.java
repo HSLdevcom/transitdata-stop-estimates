@@ -11,7 +11,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory {
-
     private static final Logger log = LoggerFactory.getLogger(MetroEstimateStopEstimatesFactory.class);
 
     public Optional<List<InternalMessages.StopEstimate>> toStopEstimates(final Message message) {
@@ -33,25 +32,27 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
             return Collections.emptyList();
         }
 
-        return metroEstimate.getMetroRowsList().stream()
+        List<InternalMessages.StopEstimate> metroStopEstimates = metroEstimate.getMetroRowsList().stream()
                 .flatMap(metroStopEstimate -> {
                     final int stopSequence = metroEstimate.getMetroRowsList().indexOf(metroStopEstimate) + 1;
                     return toStopEstimates(metroEstimate, metroStopEstimate, stopSequence, timestamp).stream();
                 })
-                //TODO: if there is only a single stop estimate with SKIPPED status, assume that it is a technical problem with metro ATS and change it to SCHEDULED
                 .collect(Collectors.toList());
+
+        //If more than one stop has been cancelled for a single metro, assume that cancellations are valid
+        if (metroStopEstimates.stream().filter(metroStopEstimate -> metroStopEstimate.getStatus() == InternalMessages.StopEstimate.Status.SKIPPED).count() > 2) {
+            return metroStopEstimates;
+        } else {
+            return metroStopEstimates.stream().map(metroStopEstimate -> metroStopEstimate.toBuilder().setStatus(InternalMessages.StopEstimate.Status.SCHEDULED).build()).collect(Collectors.toList());
+        }
     }
 
     private List<InternalMessages.StopEstimate> toStopEstimates(final MetroAtsProtos.MetroEstimate metroEstimate, final MetroAtsProtos.MetroStopEstimate metroStopEstimate, final int stopSequence, final long timestamp) {
         final Optional<InternalMessages.StopEstimate> maybeArrivalStopEstimate = toStopEstimate(metroEstimate, metroStopEstimate, stopSequence, timestamp, InternalMessages.StopEstimate.Type.ARRIVAL);
         final Optional<InternalMessages.StopEstimate> maybeDepartureStopEstimate = toStopEstimate(metroEstimate, metroStopEstimate, stopSequence, timestamp, InternalMessages.StopEstimate.Type.DEPARTURE);
         List<InternalMessages.StopEstimate> stopEstimates = new ArrayList<>();
-        if (maybeArrivalStopEstimate.isPresent()) {
-            stopEstimates.add(maybeArrivalStopEstimate.get());
-        }
-        if (maybeDepartureStopEstimate.isPresent()) {
-            stopEstimates.add(maybeDepartureStopEstimate.get());
-        }
+        maybeArrivalStopEstimate.ifPresent(stopEstimates::add);
+        maybeDepartureStopEstimate.ifPresent(stopEstimates::add);
         return stopEstimates;
     }
 
@@ -131,11 +132,9 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
             case SCHEDULED:
             case INPROGRESS:
             case COMPLETED:
-            case CANCELLED:
                 return Optional.of(InternalMessages.StopEstimate.Status.SCHEDULED);
-            //Do not produce SKIPPED stop estimates, as they are currently not working properly
-            /*case CANCELLED:
-                return Optional.of(InternalMessages.StopEstimate.Status.SKIPPED);*/
+            case CANCELLED:
+                return Optional.of(InternalMessages.StopEstimate.Status.SKIPPED);
             default:
                 log.warn("Unrecognized MetroProgress {}.", metroProgress);
                 return Optional.empty();
