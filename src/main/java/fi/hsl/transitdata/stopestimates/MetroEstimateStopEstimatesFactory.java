@@ -82,20 +82,26 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         boolean isForecastMissing = false;
         switch (type) {
             case ARRIVAL:
-                if (!metroStopEstimate.getArrivalTimeForecast().isEmpty() || !metroStopEstimate.getArrivalTimeMeasured().isEmpty()) {
-                    stopEstimateBuilder.setEstimatedTimeUtcMs(!metroStopEstimate.getArrivalTimeMeasured().isEmpty() ?
-                            ZonedDateTime.parse(metroStopEstimate.getArrivalTimeMeasured()).toInstant().toEpochMilli() :
-                            ZonedDateTime.parse(metroStopEstimate.getArrivalTimeForecast()).toInstant().toEpochMilli());
+                String arrivalTime = !metroStopEstimate.getArrivalTimeMeasured().isEmpty()
+                    ? metroStopEstimate.getArrivalTimeMeasured()
+                    : !metroStopEstimate.getArrivalTimeForecast().isEmpty()
+                        ? metroStopEstimate.getArrivalTimeForecast()
+                        : null;
+                if (arrivalTime != null) {
+                    stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(arrivalTime).toInstant().toEpochMilli());
                     stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getArrivalTimePlanned()).toInstant().toEpochMilli());
                 } else {
                     isForecastMissing = true;
                 }
                 break;
             case DEPARTURE:
-                if (!metroStopEstimate.getDepartureTimeForecast().isEmpty() || !metroStopEstimate.getDepartureTimeMeasured().isEmpty()) {
-                    stopEstimateBuilder.setEstimatedTimeUtcMs(!metroStopEstimate.getDepartureTimeMeasured().isEmpty() ?
-                            ZonedDateTime.parse(metroStopEstimate.getDepartureTimeMeasured()).toInstant().toEpochMilli() :
-                            ZonedDateTime.parse(metroStopEstimate.getDepartureTimeForecast()).toInstant().toEpochMilli());
+                String departureTime = !metroStopEstimate.getDepartureTimeMeasured().isEmpty()
+                    ? metroStopEstimate.getDepartureTimeMeasured()
+                    : !metroStopEstimate.getDepartureTimeForecast().isEmpty()
+                        ? metroStopEstimate.getDepartureTimeForecast()
+                        : null;
+                if (departureTime != null) {
+                    stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(departureTime).toInstant().toEpochMilli());
                     stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getDepartureTimePlanned()).toInstant().toEpochMilli());
                 } else {
                     isForecastMissing = true;
