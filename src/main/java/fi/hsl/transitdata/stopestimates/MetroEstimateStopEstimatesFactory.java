@@ -87,7 +87,13 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
             return Optional.empty();
         }
         stopEstimateBuilder.setType(type);
+
+
         // EstimatedTimeUtcMs & ScheduledTimeUtcMs
+        if (metroStopEstimate.getArrivalTimePlanned().isEmpty() || metroStopEstimate.getDepartureTimePlanned().isEmpty()) {
+            log.warn("Stop estimate had no planned arrival or departure time (stop number: {}, route name: {}, operating day: {}, start time: {}, direction: {})", metroStopEstimate.getStopNumber(), metroEstimate.getRouteName(), metroEstimate.getOperatingDay(), metroEstimate.getStartTime(), metroEstimate.getDirection());
+            return Optional.empty();
+        }
 
         boolean isForecastMissing = false;
         switch (type) {
