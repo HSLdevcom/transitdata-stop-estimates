@@ -66,6 +66,9 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         tripBuilder.setRouteId(metroEstimate.getRouteName());
         tripBuilder.setDirectionId(Integer.parseInt(metroEstimate.getDirection()));
         tripBuilder.setStartTime(metroEstimate.getStartTime());
+        tripBuilder.setScheduleType(metroEstimate.hasScheduled() && !metroEstimate.getScheduled() ? // If metro trip is not scheduled, assume that it is added to the schedule
+                InternalMessages.TripInfo.ScheduleType.ADDED :
+                InternalMessages.TripInfo.ScheduleType.SCHEDULED);
 
         // StopEstimate
         if (metroEstimate.getJourneySectionprogress().equals(MetroAtsProtos.MetroProgress.CANCELLED)) {
