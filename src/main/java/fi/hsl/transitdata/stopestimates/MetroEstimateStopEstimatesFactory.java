@@ -85,9 +85,12 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         }
         stopEstimateBuilder.setType(type);
         // EstimatedTimeUtcMs & ScheduledTimeUtcMs
+
         boolean isForecastMissing = false;
         switch (type) {
             case ARRIVAL:
+                stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getArrivalTimePlanned()).toInstant().toEpochMilli());
+
                 String arrivalTime = !metroStopEstimate.getArrivalTimeMeasured().isEmpty()
                     ? metroStopEstimate.getArrivalTimeMeasured()
                     : !metroStopEstimate.getArrivalTimeForecast().isEmpty()
@@ -95,12 +98,12 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                         : null;
                 if (arrivalTime != null) {
                     stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(arrivalTime).toInstant().toEpochMilli());
-                    stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getArrivalTimePlanned()).toInstant().toEpochMilli());
                 } else {
                     isForecastMissing = true;
                 }
                 break;
             case DEPARTURE:
+                stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getDepartureTimePlanned()).toInstant().toEpochMilli());
                 String departureTime = !metroStopEstimate.getDepartureTimeMeasured().isEmpty()
                     ? metroStopEstimate.getDepartureTimeMeasured()
                     : !metroStopEstimate.getDepartureTimeForecast().isEmpty()
@@ -108,7 +111,6 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                         : null;
                 if (departureTime != null) {
                     stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(departureTime).toInstant().toEpochMilli());
-                    stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getDepartureTimePlanned()).toInstant().toEpochMilli());
                 } else {
                     isForecastMissing = true;
                 }
@@ -118,7 +120,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                 break;
         }
         if (isForecastMissing) {
-            return Optional.empty();
+            stopEstimateBuilder.setStatus(InternalMessages.StopEstimate.Status.NO_DATA);
         }
 
         // LastModifiedUtcMs
