@@ -131,7 +131,7 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
         builder.setStatus(scheduledStatus);
 
         builder.setType(pubtransData.eventType);
-        builder.setEstimatedTimeUtcMs(pubtransData.common.getTargetUtcDateTimeMs());
+        builder.setEstimatedTimeUtcMs(pubtransData.common.hasObservedUtcDateTimeMs() ? pubtransData.common.getObservedUtcDateTimeMs() : pubtransData.common.getTargetUtcDateTimeMs());
         builder.setLastModifiedUtcMs(pubtransData.common.getLastModifiedUtcDateTimeMs());
         return builder.build();
     }
