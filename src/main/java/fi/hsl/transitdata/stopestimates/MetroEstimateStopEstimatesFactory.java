@@ -43,7 +43,14 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         if (metroStopEstimates.stream().filter(metroStopEstimate -> metroStopEstimate.getStatus() == InternalMessages.StopEstimate.Status.SKIPPED).count() > 2) {
             return metroStopEstimates;
         } else {
-            return metroStopEstimates.stream().map(metroStopEstimate -> metroStopEstimate.toBuilder().setStatus(InternalMessages.StopEstimate.Status.SCHEDULED).build()).collect(Collectors.toList());
+            return metroStopEstimates.stream().map(metroStopEstimate -> {
+                //Change invalid skipped status to scheduled
+                if (metroStopEstimate.getStatus() == InternalMessages.StopEstimate.Status.SKIPPED) {
+                    return metroStopEstimate.toBuilder().setStatus(InternalMessages.StopEstimate.Status.SCHEDULED).build();
+                } else {
+                    return metroStopEstimate;
+                }
+            }).collect(Collectors.toList());
         }
     }
 
