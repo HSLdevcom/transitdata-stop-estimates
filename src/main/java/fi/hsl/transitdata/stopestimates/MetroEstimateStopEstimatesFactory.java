@@ -135,7 +135,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                 log.warn("Unrecognized type {}.", type);
                 break;
         }
-        if (isForecastMissing) {
+        if (isForecastMissing && stopEstimateBuilder.getStatus() != InternalMessages.StopEstimate.Status.SKIPPED) {
             stopEstimateBuilder.setStatus(InternalMessages.StopEstimate.Status.NO_DATA);
         }
 
