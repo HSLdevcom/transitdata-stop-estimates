@@ -6,6 +6,8 @@ import org.apache.pulsar.client.api.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -139,10 +141,24 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
             stopEstimateBuilder.setStatus(InternalMessages.StopEstimate.Status.NO_DATA);
         }
 
+        if (shouldIgnoreKoivusaari(metroStopEstimate)) {
+            log.debug("Ignoring metro stop estimate from Koivusaari");
+            return Optional.empty();
+        }
+
         // LastModifiedUtcMs
         stopEstimateBuilder.setLastModifiedUtcMs(timestamp);
 
         return Optional.of(stopEstimateBuilder.build());
+    }
+
+    //"Hack" for ignoring data from Koivusaari station when it is closed
+    private static boolean shouldIgnoreKoivusaari(MetroAtsProtos.MetroStopEstimate metroStopEstimate) {
+        final LocalDate date = ZonedDateTime.parse(metroStopEstimate.getArrivalTimePlanned()).withZoneSameInstant(ZoneId.of("Europe/Helsinki")).toLocalDate();
+
+        return "KOS".equals(metroStopEstimate.getStation()) && //station = Koivusaari
+                date.isBefore(LocalDate.of(2020, 8, 5).plusDays(1)) && //Before 5.8.2020
+                date.isAfter(LocalDate.of(2020, 6, 1).minusDays(1)); //After 1.6.2020
     }
 
     private Optional<InternalMessages.StopEstimate.Status> getStopEstimateStatus(MetroAtsProtos.MetroProgress metroProgress) {
