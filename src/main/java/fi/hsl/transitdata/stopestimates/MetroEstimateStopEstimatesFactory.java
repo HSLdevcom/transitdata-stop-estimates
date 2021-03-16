@@ -6,6 +6,8 @@ import org.apache.pulsar.client.api.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,7 +45,14 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         if (metroStopEstimates.stream().filter(metroStopEstimate -> metroStopEstimate.getStatus() == InternalMessages.StopEstimate.Status.SKIPPED).count() > 2) {
             return metroStopEstimates;
         } else {
-            return metroStopEstimates.stream().map(metroStopEstimate -> metroStopEstimate.toBuilder().setStatus(InternalMessages.StopEstimate.Status.SCHEDULED).build()).collect(Collectors.toList());
+            return metroStopEstimates.stream().map(metroStopEstimate -> {
+                //Change invalid skipped status to scheduled
+                if (metroStopEstimate.getStatus() == InternalMessages.StopEstimate.Status.SKIPPED) {
+                    return metroStopEstimate.toBuilder().setStatus(InternalMessages.StopEstimate.Status.SCHEDULED).build();
+                } else {
+                    return metroStopEstimate;
+                }
+            }).collect(Collectors.toList());
         }
     }
 
@@ -66,6 +75,9 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         tripBuilder.setRouteId(metroEstimate.getRouteName());
         tripBuilder.setDirectionId(Integer.parseInt(metroEstimate.getDirection()));
         tripBuilder.setStartTime(metroEstimate.getStartTime());
+        tripBuilder.setScheduleType(metroEstimate.hasScheduled() && !metroEstimate.getScheduled() ? // If metro trip is not scheduled, assume that it is added to the schedule
+                InternalMessages.TripInfo.ScheduleType.ADDED :
+                InternalMessages.TripInfo.ScheduleType.SCHEDULED);
 
         // StopEstimate
         if (metroEstimate.getJourneySectionprogress().equals(MetroAtsProtos.MetroProgress.CANCELLED)) {
@@ -84,10 +96,19 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
             return Optional.empty();
         }
         stopEstimateBuilder.setType(type);
+
+
         // EstimatedTimeUtcMs & ScheduledTimeUtcMs
+        if (metroStopEstimate.getArrivalTimePlanned().isEmpty() || metroStopEstimate.getDepartureTimePlanned().isEmpty()) {
+            log.warn("Stop estimate had no planned arrival or departure time (stop number: {}, route name: {}, operating day: {}, start time: {}, direction: {})", metroStopEstimate.getStopNumber(), metroEstimate.getRouteName(), metroEstimate.getOperatingDay(), metroEstimate.getStartTime(), metroEstimate.getDirection());
+            return Optional.empty();
+        }
+
         boolean isForecastMissing = false;
         switch (type) {
             case ARRIVAL:
+                stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getArrivalTimePlanned()).toInstant().toEpochMilli());
+
                 String arrivalTime = !metroStopEstimate.getArrivalTimeMeasured().isEmpty()
                     ? metroStopEstimate.getArrivalTimeMeasured()
                     : !metroStopEstimate.getArrivalTimeForecast().isEmpty()
@@ -95,12 +116,12 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                         : null;
                 if (arrivalTime != null) {
                     stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(arrivalTime).toInstant().toEpochMilli());
-                    stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getArrivalTimePlanned()).toInstant().toEpochMilli());
                 } else {
                     isForecastMissing = true;
                 }
                 break;
             case DEPARTURE:
+                stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getDepartureTimePlanned()).toInstant().toEpochMilli());
                 String departureTime = !metroStopEstimate.getDepartureTimeMeasured().isEmpty()
                     ? metroStopEstimate.getDepartureTimeMeasured()
                     : !metroStopEstimate.getDepartureTimeForecast().isEmpty()
@@ -108,7 +129,6 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                         : null;
                 if (departureTime != null) {
                     stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(departureTime).toInstant().toEpochMilli());
-                    stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getDepartureTimePlanned()).toInstant().toEpochMilli());
                 } else {
                     isForecastMissing = true;
                 }
@@ -117,7 +137,12 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                 log.warn("Unrecognized type {}.", type);
                 break;
         }
-        if (isForecastMissing) {
+        if (isForecastMissing && stopEstimateBuilder.getStatus() != InternalMessages.StopEstimate.Status.SKIPPED) {
+            stopEstimateBuilder.setStatus(InternalMessages.StopEstimate.Status.NO_DATA);
+        }
+
+        if (shouldIgnoreKoivusaari(metroStopEstimate)) {
+            log.debug("Ignoring metro stop estimate from Koivusaari");
             return Optional.empty();
         }
 
@@ -125,6 +150,15 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         stopEstimateBuilder.setLastModifiedUtcMs(timestamp);
 
         return Optional.of(stopEstimateBuilder.build());
+    }
+
+    //"Hack" for ignoring data from Koivusaari station when it is closed
+    private static boolean shouldIgnoreKoivusaari(MetroAtsProtos.MetroStopEstimate metroStopEstimate) {
+        final LocalDate date = ZonedDateTime.parse(metroStopEstimate.getArrivalTimePlanned()).withZoneSameInstant(ZoneId.of("Europe/Helsinki")).toLocalDate();
+
+        return "KOS".equals(metroStopEstimate.getStation()) && //station = Koivusaari
+                date.isBefore(LocalDate.of(2020, 8, 5).plusDays(1)) && //Before 5.8.2020
+                date.isAfter(LocalDate.of(2020, 6, 1).minusDays(1)); //After 1.6.2020
     }
 
     private Optional<InternalMessages.StopEstimate.Status> getStopEstimateStatus(MetroAtsProtos.MetroProgress metroProgress) {
