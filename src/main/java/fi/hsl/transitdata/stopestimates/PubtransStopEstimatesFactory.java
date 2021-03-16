@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,7 +28,7 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
 
                 if (validate(data)) {
                     InternalMessages.StopEstimate converted = toStopEstimate(data);
-                    return Optional.of(Arrays.asList(converted));
+                    return Optional.of(Collections.singletonList(converted));
                 }
             }
             else {
@@ -132,6 +133,7 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
 
         builder.setType(pubtransData.eventType);
         builder.setEstimatedTimeUtcMs(pubtransData.common.hasObservedUtcDateTimeMs() ? pubtransData.common.getObservedUtcDateTimeMs() : pubtransData.common.getTargetUtcDateTimeMs());
+        builder.setObservedTime(pubtransData.common.hasObservedUtcDateTimeMs());
         builder.setLastModifiedUtcMs(pubtransData.common.getLastModifiedUtcDateTimeMs());
         return builder.build();
     }
