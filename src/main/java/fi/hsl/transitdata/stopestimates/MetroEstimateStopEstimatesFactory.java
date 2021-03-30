@@ -116,6 +116,9 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                         : null;
                 if (arrivalTime != null) {
                     stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(arrivalTime).toInstant().toEpochMilli());
+                    if (!metroStopEstimate.getArrivalTimeMeasured().isEmpty()) {
+                        stopEstimateBuilder.setObservedTime(true);
+                    }
                 } else {
                     isForecastMissing = true;
                 }
@@ -129,6 +132,9 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                         : null;
                 if (departureTime != null) {
                     stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(departureTime).toInstant().toEpochMilli());
+                    if (!metroStopEstimate.getDepartureTimeMeasured().isEmpty()) {
+                        stopEstimateBuilder.setObservedTime(true);
+                    }
                 } else {
                     isForecastMissing = true;
                 }
