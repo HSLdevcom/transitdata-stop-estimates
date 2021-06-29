@@ -123,6 +123,10 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
         tripBuilder.setStartTime(pubtransData.tripInfo.getStartTime());
         builder.setTripInfo(tripBuilder.build());
         builder.setStopId(pubtransData.tripInfo.getStopId());
+        if (pubtransData.tripInfo.hasTargetedStopId()) {
+            builder.setTargetedStopId(pubtransData.tripInfo.getTargetedStopId());
+        }
+
         builder.setStopSequence(pubtransData.common.getJourneyPatternSequenceNumber());
 
         InternalMessages.StopEstimate.Status scheduledStatus = (pubtransData.common.getState() == 3L) ?
