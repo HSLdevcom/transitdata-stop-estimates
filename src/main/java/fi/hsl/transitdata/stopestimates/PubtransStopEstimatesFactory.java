@@ -89,7 +89,8 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
             return false;
         }
         if (common.getType() == 0) {
-            log.info("Event is for a via point");
+            log.info("Event is for a via point, message discarded");
+            return false;
         }
         return true;
     }
