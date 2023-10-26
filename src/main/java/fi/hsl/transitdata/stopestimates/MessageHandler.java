@@ -34,7 +34,10 @@ public class MessageHandler implements IMessageHandler {
                 final long timestamp = received.getEventTime();
                 final String key = received.getKey();
                 final List<InternalMessages.StopEstimate> stopEstimates = maybeStopEstimates.get();
-                stopEstimates.forEach(stopEstimate -> sendPulsarMessage(messageId, stopEstimate, timestamp, key));
+                stopEstimates.forEach(stopEstimate -> {
+                    // TODO: if !stopEstimate.isViaPoint then sendPulsarMessage; else nothing;
+                    sendPulsarMessage(messageId, stopEstimate, timestamp, key);
+                });
             } else {
                 log.warn("Received unexpected schema, ignoring.");
                 ack(received.getMessageId()); //Ack so we don't receive it again

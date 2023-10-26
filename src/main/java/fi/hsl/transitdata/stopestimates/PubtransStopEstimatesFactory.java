@@ -90,7 +90,7 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
         }
         if (common.getType() == 0) {
             log.debug("Event is for a via point, message discarded");
-            return false;
+            return false; // TODO: This can be removed once necessary checks are in place.
         }
         return true;
     }
@@ -114,7 +114,6 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
     private static InternalMessages.StopEstimate toStopEstimate(final PubtransData pubtransData) throws Exception {
         InternalMessages.StopEstimate.Builder builder = InternalMessages.StopEstimate.newBuilder();
         builder.setSchemaVersion(builder.getSchemaVersion());
-
         InternalMessages.TripInfo.Builder tripBuilder = InternalMessages.TripInfo.newBuilder();
         tripBuilder.setTripId(Long.toString(pubtransData.tripInfo.getDvjId()));
         tripBuilder.setOperatingDay(pubtransData.tripInfo.getOperatingDay());
@@ -136,6 +135,10 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
         builder.setStatus(scheduledStatus);
 
         builder.setType(pubtransData.eventType);
+        /* TODO:
+            builder.setIsViapoint = (pubtransData.common.getEventType == 0 ? true : false);
+            Add necessary changes to transitdata.common
+         */
         builder.setEstimatedTimeUtcMs(pubtransData.common.hasObservedUtcDateTimeMs() ? pubtransData.common.getObservedUtcDateTimeMs() : pubtransData.common.getTargetUtcDateTimeMs());
         builder.setObservedTime(pubtransData.common.hasObservedUtcDateTimeMs());
         builder.setLastModifiedUtcMs(pubtransData.common.getLastModifiedUtcDateTimeMs());
