@@ -90,7 +90,6 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
         }
         if (common.getType() == 0) {
             log.debug("Event is for a via point, message discarded");
-            return false; // TODO: This can be removed once necessary checks are in place.
         }
         return true;
     }
@@ -135,10 +134,7 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
         builder.setStatus(scheduledStatus);
 
         builder.setType(pubtransData.eventType);
-        /* TODO:
-            builder.setIsViapoint = (pubtransData.common.getEventType == 0 ? true : false);
-            Add necessary changes to transitdata.common
-         */
+        builder.setIsViaPoint(pubtransData.common.getType() == 0);
         builder.setEstimatedTimeUtcMs(pubtransData.common.hasObservedUtcDateTimeMs() ? pubtransData.common.getObservedUtcDateTimeMs() : pubtransData.common.getTargetUtcDateTimeMs());
         builder.setObservedTime(pubtransData.common.hasObservedUtcDateTimeMs());
         builder.setLastModifiedUtcMs(pubtransData.common.getLastModifiedUtcDateTimeMs());

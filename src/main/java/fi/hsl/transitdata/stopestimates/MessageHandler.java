@@ -35,8 +35,9 @@ public class MessageHandler implements IMessageHandler {
                 final String key = received.getKey();
                 final List<InternalMessages.StopEstimate> stopEstimates = maybeStopEstimates.get();
                 stopEstimates.forEach(stopEstimate -> {
-                    // TODO: if !stopEstimate.isViaPoint then sendPulsarMessage; else nothing;
-                    sendPulsarMessage(messageId, stopEstimate, timestamp, key);
+                    if (!stopEstimate.getIsViaPoint()) {
+                        sendPulsarMessage(messageId, stopEstimate, timestamp, key);
+                    }
                 });
             } else {
                 log.warn("Received unexpected schema, ignoring.");
