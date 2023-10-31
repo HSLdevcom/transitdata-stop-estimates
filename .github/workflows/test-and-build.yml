@@ -35,7 +35,7 @@ jobs:
           name: transitdata-stop-estimates.jar
           path: target
       - name: Build and publish develop Docker image
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: elgohr/Publish-Docker-Github-Action@v5
         with:
           name: hsldevcom/transitdata-stop-estimates
           username: ${{ secrets.TRANSITDATA_DOCKERHUB_USER }}
@@ -54,7 +54,7 @@ jobs:
           name: transitdata-stop-estimates.jar
           path: target
       - name: Build and publish release Docker image
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: elgohr/Publish-Docker-Github-Action@v5
         with:
           name: hsldevcom/transitdata-stop-estimates
           username: ${{ secrets.TRANSITDATA_DOCKERHUB_USER }}
