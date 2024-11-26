@@ -1,10 +1,8 @@
-[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-stop-estimates.svg?branch=master)](https://travis-ci.org/HSLdevcom/transitdata-stop-estimates)
-
-# Transitdata-stop-estimates
+# Transitdata-stop-estimates [![Test and create Docker image](https://github.com/HSLdevcom/transitdata-stop-estimates/actions/workflows/test-and-build.yml/badge.svg)](https://github.com/HSLdevcom/transitdata-stop-estimates/actions/workflows/test-and-build.yml)
 
 ## Description
 
-Application for parsing Stop Estimates from Pubtrans raw data.
+Application for creating abstract StopEstimates from raw estimates sourced from PubTrans or Metro ATS.
 This provides a nice abstraction to later combine busses, trains, metros and other transportation methods.
 Messages are read from one Pulsar topic and the output is written to another Pulsar topic.
 
@@ -16,8 +14,8 @@ This project depends on [transitdata-common](https://github.com/HSLdevcom/transi
 
 ### Locally
 
-- ```mvn compile```  
-- ```mvn package```  
+- `mvn compile`
+- `mvn package`
 
 ### Docker image
 
@@ -25,8 +23,10 @@ This project depends on [transitdata-common](https://github.com/HSLdevcom/transi
 
 ## Running
 
-Requirements:
-- Local Pulsar Cluster
-  - By default uses localhost, override host in PULSAR_HOST if needed.
-    - Tip: f.ex if running inside Docker in OSX set `PULSAR_HOST=host.docker.internal` to connect to the parent machine
-  - You can use [this script](https://github.com/HSLdevcom/transitdata/blob/master/bin/pulsar/pulsar-up.sh) to launch it as Docker container
+### Dependencies
+
+* Pulsar
+
+### Environment variables
+
+* `SOURCE`: specifies which configuration file to use from resources folder, currently available: `metro-estimate.conf` and `ptroi.conf`
