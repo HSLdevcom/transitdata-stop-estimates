@@ -36,7 +36,7 @@ public class MessageHandler implements IMessageHandler {
                 final List<InternalMessages.StopEstimate> stopEstimates = maybeStopEstimates.get();
                 stopEstimates.forEach(stopEstimate -> sendPulsarMessage(messageId, stopEstimate, timestamp, key));
             } else {
-                log.warn("RRRReceived unexpected schema, ignoring.");
+                log.warn("Received unexpected schema, ignoring.");
                 ack(received.getMessageId()); //Ack so we don't receive it again
             }
         } catch (Exception e) {
@@ -56,9 +56,7 @@ public class MessageHandler implements IMessageHandler {
     private void sendPulsarMessage(MessageId received, InternalMessages.StopEstimate estimate, long timestamp, String key) {
         
         String tripId = estimate.getTripInfo().getTripId();
-        if (tripId.contains("31M")) {
-            log.info("Metro trip. TripId: {}", tripId);
-        }
+        log.info("TripId: {}", tripId);
         
         producer.newMessage()
                 .key(key)
