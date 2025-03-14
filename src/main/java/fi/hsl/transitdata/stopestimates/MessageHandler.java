@@ -57,7 +57,7 @@ public class MessageHandler implements IMessageHandler {
         
         String routeId = estimate.getTripInfo().getRouteId();
         if (routeId.contains("31M")) {
-            log.info("RouteId: {}", routeId);
+            log.info("Found metro trip. RouteId: {}", routeId);
         }
         
         producer.newMessage()
