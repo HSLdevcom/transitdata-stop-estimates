@@ -30,12 +30,10 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
                     InternalMessages.StopEstimate converted = toStopEstimate(data);
                     return Optional.of(Collections.singletonList(converted));
                 }
-            }
-            else {
+            } else {
                 log.warn("Received unexpected schema, ignoring.");
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Exception while handling message", e);
         }
         return Optional.empty();
@@ -45,27 +43,16 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
         try {
             if (schema.schema == TransitdataProperties.ProtobufSchema.PubtransRoiArrival) {
                 PubtransTableProtos.ROIArrival roiMessage = PubtransTableProtos.ROIArrival.parseFrom(data);
-                return Optional.of(
-                        new PubtransData(
-                                InternalMessages.StopEstimate.Type.ARRIVAL,
-                                roiMessage.getCommon(),
-                                roiMessage.getTripInfo()
-                        ));
-            }
-            else if (schema.schema == TransitdataProperties.ProtobufSchema.PubtransRoiDeparture) {
+                return Optional.of(new PubtransData(InternalMessages.StopEstimate.Type.ARRIVAL, roiMessage.getCommon(),
+                        roiMessage.getTripInfo()));
+            } else if (schema.schema == TransitdataProperties.ProtobufSchema.PubtransRoiDeparture) {
                 PubtransTableProtos.ROIDeparture roiMessage = PubtransTableProtos.ROIDeparture.parseFrom(data);
-                return Optional.of(
-                        new PubtransData(
-                                InternalMessages.StopEstimate.Type.DEPARTURE,
-                                roiMessage.getCommon(),
-                                roiMessage.getTripInfo()
-                        ));
-            }
-            else {
+                return Optional.of(new PubtransData(InternalMessages.StopEstimate.Type.DEPARTURE,
+                        roiMessage.getCommon(), roiMessage.getTripInfo()));
+            } else {
                 return Optional.empty();
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Failed to parse PubtransData from schema " + schema.toString(), e);
             return Optional.empty();
         }
@@ -129,14 +116,16 @@ public class PubtransStopEstimatesFactory implements IStopEstimatesFactory {
 
         builder.setStopSequence(pubtransData.common.getJourneyPatternSequenceNumber());
 
-        InternalMessages.StopEstimate.Status scheduledStatus = (pubtransData.common.getState() == 3L) ?
-                InternalMessages.StopEstimate.Status.SKIPPED :
-                InternalMessages.StopEstimate.Status.SCHEDULED;
+        InternalMessages.StopEstimate.Status scheduledStatus = (pubtransData.common.getState() == 3L)
+                ? InternalMessages.StopEstimate.Status.SKIPPED
+                : InternalMessages.StopEstimate.Status.SCHEDULED;
 
         builder.setStatus(scheduledStatus);
 
         builder.setType(pubtransData.eventType);
-        builder.setEstimatedTimeUtcMs(pubtransData.common.hasObservedUtcDateTimeMs() ? pubtransData.common.getObservedUtcDateTimeMs() : pubtransData.common.getTargetUtcDateTimeMs());
+        builder.setEstimatedTimeUtcMs(pubtransData.common.hasObservedUtcDateTimeMs()
+                ? pubtransData.common.getObservedUtcDateTimeMs()
+                : pubtransData.common.getTargetUtcDateTimeMs());
         builder.setObservedTime(pubtransData.common.hasObservedUtcDateTimeMs());
         builder.setLastModifiedUtcMs(pubtransData.common.getLastModifiedUtcDateTimeMs());
         return builder.build();

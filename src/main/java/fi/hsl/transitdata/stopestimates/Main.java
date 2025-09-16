@@ -19,7 +19,8 @@ public class Main {
         if (maybeSourceType.isPresent()) {
             sourceType = maybeSourceType.get();
         } else {
-            throw new IllegalArgumentException(String.format("Failed to get source type. Env var SOURCE may be missing."));
+            throw new IllegalArgumentException(
+                    String.format("Failed to get source type. Env var SOURCE may be missing."));
         }
         Config config = getConfig(sourceType);
 
@@ -39,17 +40,25 @@ public class Main {
 
     private static Config getConfig(final String source) {
         switch (source) {
-            case "ptroi": return ConfigParser.createConfig("ptroi.conf");
-            case "metro-estimate": return ConfigParser.createConfig("metro-estimate.conf");
-            default: throw new IllegalArgumentException(String.format("Failed to get Config specified by env var SOURCE=%s.", source));
+            case "ptroi" :
+                return ConfigParser.createConfig("ptroi.conf");
+            case "metro-estimate" :
+                return ConfigParser.createConfig("metro-estimate.conf");
+            default :
+                throw new IllegalArgumentException(
+                        String.format("Failed to get Config specified by env var SOURCE=%s.", source));
         }
     }
 
     private static IStopEstimatesFactory getFactory(final String source) {
         switch (source) {
-            case "ptroi": return new PubtransStopEstimatesFactory();
-            case "metro-estimate": return new MetroEstimateStopEstimatesFactory();
-            default: throw new IllegalArgumentException(String.format("Failed to get IStopEstimatesFactory specified by env var SOURCE=%s.", source));
+            case "ptroi" :
+                return new PubtransStopEstimatesFactory();
+            case "metro-estimate" :
+                return new MetroEstimateStopEstimatesFactory();
+            default :
+                throw new IllegalArgumentException(
+                        String.format("Failed to get IStopEstimatesFactory specified by env var SOURCE=%s.", source));
         }
     }
 }
