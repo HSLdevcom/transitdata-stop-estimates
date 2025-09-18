@@ -44,35 +44,31 @@ public class MessageHandler implements IMessageHandler {
     }
 
     private void ack(MessageId received) {
-        consumer.acknowledgeAsync(received)
-                .exceptionally(throwable -> {
-                    log.error("Failed to ack Pulsar message", throwable);
-                    return null;
-                })
-                .thenRun(() -> {});
+        consumer.acknowledgeAsync(received).exceptionally(throwable -> {
+            log.error("Failed to ack Pulsar message", throwable);
+            return null;
+        }).thenRun(() -> {
+        });
     }
 
-    private void sendPulsarMessage(MessageId received, InternalMessages.StopEstimate estimate, long timestamp, String key) {
-        
+    private void sendPulsarMessage(MessageId received, InternalMessages.StopEstimate estimate, long timestamp,
+            String key) {
+
         String routeId = estimate.getTripInfo().getRouteId();
         if (routeId.contains("31M")) {
             log.debug("Found metro trip. RouteId: {}", routeId);
         }
-        
-        producer.newMessage()
-                .key(key)
-                .eventTime(timestamp)
-                .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, ProtobufSchema.InternalMessagesStopEstimate.toString())
+
+        producer.newMessage().key(key).eventTime(timestamp)
+                .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA,
+                        ProtobufSchema.InternalMessagesStopEstimate.toString())
                 .property(TransitdataProperties.KEY_SCHEMA_VERSION, Integer.toString(estimate.getSchemaVersion()))
                 .property(TransitdataProperties.KEY_DVJ_ID, estimate.getTripInfo().getTripId()) // TODO remove once TripUpdateProcessor won't need it anymore
-                .value(estimate.toByteArray())
-                .sendAsync()
-                .whenComplete((MessageId id, Throwable t) -> {
+                .value(estimate.toByteArray()).sendAsync().whenComplete((MessageId id, Throwable t) -> {
                     if (t != null) {
                         log.error("Failed to send Pulsar message", t);
                         //Should we abort?
-                    }
-                    else {
+                    } else {
                         //Does this become a bottleneck? Does pulsar send more messages before we ack the previous one?
                         //If yes we need to get rid of this
                         ack(received);
