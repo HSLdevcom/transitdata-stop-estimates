@@ -3,7 +3,7 @@
 ## Description
 
 Application for creating abstract StopEstimates from raw estimates sourced from PubTrans or Metro ATS.
-This provides a nice abstraction to later combine busses, trains, metros and other transportation methods.
+This provides a nice abstraction to later combine buses, trains, metros and other transportation methods.
 Messages are read from one Pulsar topic and the output is written to another Pulsar topic.
 
 ## Building
