@@ -18,3 +18,5 @@ target/*
 *.tmp
 *.temp
 run/data
+
+dependency-reduced-pom.xml

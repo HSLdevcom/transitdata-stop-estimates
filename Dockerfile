@@ -1,8 +1,17 @@
-FROM eclipse-temurin:11-alpine
-#Install curl for health check
-RUN apk add --no-cache curl
+# syntax=docker/dockerfile:1
+# check=error=true
 
-ADD target/transitdata-stop-estimates.jar /usr/app/transitdata-stop-estimates.jar
-COPY start-application.sh /
-RUN chmod +x /start-application.sh
-CMD ["/start-application.sh"]
+FROM hsldevcom/infodevops-docker-base-images:1.0.2-25-java-jdk AS build
+WORKDIR /usr/app
+ARG GITHUB_ACTOR=github-actions
+COPY mvnw pom.xml ./
+COPY .mvn .mvn
+COPY .mvn/settings.xml /root/.m2/settings.xml
+COPY src src
+RUN --mount=type=secret,id=github_token \
+    export GITHUB_TOKEN="$(cat /run/secrets/github_token)" && \
+    export GITHUB_ACTOR="$GITHUB_ACTOR" && \
+    ./mvnw -B package -DskipTests
+FROM hsldevcom/infodevops-docker-base-images:1.0.2-25-java-jre
+COPY --from=build /usr/app/target/transitdata-stop-estimates.jar /usr/app/transitdata-stop-estimates.jar
+ENTRYPOINT ["java", "-XX:InitialRAMPercentage=10.0", "-XX:MaxRAMPercentage=95.0", "-jar", "/usr/app/transitdata-stop-estimates.jar"]
