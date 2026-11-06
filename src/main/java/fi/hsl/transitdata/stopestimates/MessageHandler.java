@@ -1,5 +1,6 @@
 package fi.hsl.transitdata.stopestimates;
 
+import fi.hsl.common.metrics.PipelineMetrics;
 import fi.hsl.common.pulsar.IMessageHandler;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
@@ -32,9 +33,11 @@ public class MessageHandler implements IMessageHandler {
             if (maybeStopEstimates.isPresent()) {
                 final MessageId messageId = received.getMessageId();
                 final long timestamp = received.getEventTime();
+                final long sourceTimestamp = PipelineMetrics.resolveSourceTimestampMs(received);
                 final String key = received.getKey();
                 final List<InternalMessages.StopEstimate> stopEstimates = maybeStopEstimates.get();
-                stopEstimates.forEach(stopEstimate -> sendPulsarMessage(messageId, stopEstimate, timestamp, key));
+                stopEstimates.forEach(
+                        stopEstimate -> sendPulsarMessage(messageId, stopEstimate, timestamp, key, sourceTimestamp));
             } else {
                 log.warn("Received unexpected schema, ignoring.");
                 ack(received.getMessageId()); //Ack so we don't receive it again
@@ -45,30 +48,27 @@ public class MessageHandler implements IMessageHandler {
     }
 
     private void ack(MessageId received) {
-        consumer.acknowledgeAsync(received)
-                .exceptionally(throwable -> {
-                    log.error("Failed to ack Pulsar message", throwable);
-                    return null;
-                })
-                .thenRun(() -> {});
+        consumer.acknowledgeAsync(received).exceptionally(throwable -> {
+            log.error("Failed to ack Pulsar message", throwable);
+            return null;
+        }).thenRun(() -> {
+        });
     }
 
-    private void sendPulsarMessage(MessageId received, InternalMessages.StopEstimate estimate, long timestamp, String key) {
+    private void sendPulsarMessage(MessageId received, InternalMessages.StopEstimate estimate, long timestamp,
+            String key, long sourceTimestamp) {
 
-        producer.newMessage()
-                .key(key)
-                .eventTime(timestamp)
-                .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, ProtobufSchema.InternalMessagesStopEstimate.toString())
+        producer.newMessage().key(key).eventTime(timestamp)
+                .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA,
+                        ProtobufSchema.InternalMessagesStopEstimate.toString())
                 .property(TransitdataProperties.KEY_SCHEMA_VERSION, Integer.toString(estimate.getSchemaVersion()))
+                .property(TransitdataProperties.KEY_SOURCE_MESSAGE_TIMESTAMP_MS, Long.toString(sourceTimestamp))
                 .property(TransitdataProperties.KEY_DVJ_ID, estimate.getTripInfo().getTripId()) // TODO remove once TripUpdateProcessor won't need it anymore
-                .value(estimate.toByteArray())
-                .sendAsync()
-                .whenComplete((MessageId id, Throwable t) -> {
+                .value(estimate.toByteArray()).sendAsync().whenComplete((MessageId id, Throwable t) -> {
                     if (t != null) {
                         log.error("Failed to send Pulsar message", t);
                         //Should we abort?
-                    }
-                    else {
+                    } else {
                         //Does this become a bottleneck? Does pulsar send more messages before we ack the previous one?
                         //If yes we need to get rid of this
                         ack(received);

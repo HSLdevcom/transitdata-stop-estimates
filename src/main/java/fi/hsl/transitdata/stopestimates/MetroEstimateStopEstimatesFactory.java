@@ -38,17 +38,19 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                 .flatMap(metroStopEstimate -> {
                     final int stopSequence = metroEstimate.getMetroRowsList().indexOf(metroStopEstimate) + 1;
                     return toStopEstimates(metroEstimate, metroStopEstimate, stopSequence, timestamp).stream();
-                })
-                .collect(Collectors.toList());
+                }).collect(Collectors.toList());
 
         //If more than one stop has been cancelled for a single metro, assume that cancellations are valid
-        if (metroStopEstimates.stream().filter(metroStopEstimate -> metroStopEstimate.getStatus() == InternalMessages.StopEstimate.Status.SKIPPED).count() > 2) {
+        if (metroStopEstimates.stream().filter(
+                metroStopEstimate -> metroStopEstimate.getStatus() == InternalMessages.StopEstimate.Status.SKIPPED)
+                .count() > 2) {
             return metroStopEstimates;
         } else {
             return metroStopEstimates.stream().map(metroStopEstimate -> {
                 //Change invalid skipped status to scheduled
                 if (metroStopEstimate.getStatus() == InternalMessages.StopEstimate.Status.SKIPPED) {
-                    return metroStopEstimate.toBuilder().setStatus(InternalMessages.StopEstimate.Status.SCHEDULED).build();
+                    return metroStopEstimate.toBuilder().setStatus(InternalMessages.StopEstimate.Status.SCHEDULED)
+                            .build();
                 } else {
                     return metroStopEstimate;
                 }
@@ -56,16 +58,21 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         }
     }
 
-    private List<InternalMessages.StopEstimate> toStopEstimates(final MetroAtsProtos.MetroEstimate metroEstimate, final MetroAtsProtos.MetroStopEstimate metroStopEstimate, final int stopSequence, final long timestamp) {
-        final Optional<InternalMessages.StopEstimate> maybeArrivalStopEstimate = toStopEstimate(metroEstimate, metroStopEstimate, stopSequence, timestamp, InternalMessages.StopEstimate.Type.ARRIVAL);
-        final Optional<InternalMessages.StopEstimate> maybeDepartureStopEstimate = toStopEstimate(metroEstimate, metroStopEstimate, stopSequence, timestamp, InternalMessages.StopEstimate.Type.DEPARTURE);
+    private List<InternalMessages.StopEstimate> toStopEstimates(final MetroAtsProtos.MetroEstimate metroEstimate,
+            final MetroAtsProtos.MetroStopEstimate metroStopEstimate, final int stopSequence, final long timestamp) {
+        final Optional<InternalMessages.StopEstimate> maybeArrivalStopEstimate = toStopEstimate(metroEstimate,
+                metroStopEstimate, stopSequence, timestamp, InternalMessages.StopEstimate.Type.ARRIVAL);
+        final Optional<InternalMessages.StopEstimate> maybeDepartureStopEstimate = toStopEstimate(metroEstimate,
+                metroStopEstimate, stopSequence, timestamp, InternalMessages.StopEstimate.Type.DEPARTURE);
         List<InternalMessages.StopEstimate> stopEstimates = new ArrayList<>();
         maybeArrivalStopEstimate.ifPresent(stopEstimates::add);
         maybeDepartureStopEstimate.ifPresent(stopEstimates::add);
         return stopEstimates;
     }
 
-    private Optional<InternalMessages.StopEstimate> toStopEstimate(final MetroAtsProtos.MetroEstimate metroEstimate, final MetroAtsProtos.MetroStopEstimate metroStopEstimate, final int stopSequence, final long timestamp, final InternalMessages.StopEstimate.Type type) {
+    private Optional<InternalMessages.StopEstimate> toStopEstimate(final MetroAtsProtos.MetroEstimate metroEstimate,
+            final MetroAtsProtos.MetroStopEstimate metroStopEstimate, final int stopSequence, final long timestamp,
+            final InternalMessages.StopEstimate.Type type) {
         InternalMessages.StopEstimate.Builder stopEstimateBuilder = InternalMessages.StopEstimate.newBuilder();
         InternalMessages.TripInfo.Builder tripBuilder = InternalMessages.TripInfo.newBuilder();
 
@@ -76,8 +83,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         tripBuilder.setDirectionId(Integer.parseInt(metroEstimate.getDirection()));
         tripBuilder.setStartTime(metroEstimate.getStartTime());
         tripBuilder.setScheduleType(metroEstimate.hasScheduled() && !metroEstimate.getScheduled() ? // If metro trip is not scheduled, assume that it is added to the schedule
-                InternalMessages.TripInfo.ScheduleType.ADDED :
-                InternalMessages.TripInfo.ScheduleType.SCHEDULED);
+                InternalMessages.TripInfo.ScheduleType.ADDED : InternalMessages.TripInfo.ScheduleType.SCHEDULED);
 
         // StopEstimate
         if (metroEstimate.getJourneySectionprogress().equals(MetroAtsProtos.MetroProgress.CANCELLED)) {
@@ -88,34 +94,43 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         stopEstimateBuilder.setStopId(metroStopEstimate.getStopNumber());
         stopEstimateBuilder.setStopSequence(stopSequence);
         // Status
-        Optional<InternalMessages.StopEstimate.Status> maybeStopEstimateStatus = getStopEstimateStatus(metroStopEstimate.getRowProgress());
+        Optional<InternalMessages.StopEstimate.Status> maybeStopEstimateStatus = getStopEstimateStatus(
+                metroStopEstimate.getRowProgress());
         if (maybeStopEstimateStatus.isPresent()) {
             stopEstimateBuilder.setStatus(maybeStopEstimateStatus.get());
         } else {
-            log.warn("Stop estimate had no rowProgress, stop number: {}, route name: {}, operating day: {}, start time: {}, direction: {}", metroStopEstimate.getStopNumber(), metroEstimate.getRouteName(), metroEstimate.getOperatingDay(), metroEstimate.getStartTime(), metroEstimate.getDirection());
+            log.warn(
+                    "Stop estimate had no rowProgress, stop number: {}, route name: {}, operating day: {}, start time: {}, direction: {}",
+                    metroStopEstimate.getStopNumber(), metroEstimate.getRouteName(), metroEstimate.getOperatingDay(),
+                    metroEstimate.getStartTime(), metroEstimate.getDirection());
             return Optional.empty();
         }
         stopEstimateBuilder.setType(type);
 
-
         // EstimatedTimeUtcMs & ScheduledTimeUtcMs
-        if (metroStopEstimate.getArrivalTimePlanned().isEmpty() || metroStopEstimate.getDepartureTimePlanned().isEmpty()) {
-            log.warn("Stop estimate had no planned arrival or departure time (stop number: {}, route name: {}, operating day: {}, start time: {}, direction: {})", metroStopEstimate.getStopNumber(), metroEstimate.getRouteName(), metroEstimate.getOperatingDay(), metroEstimate.getStartTime(), metroEstimate.getDirection());
+        if (metroStopEstimate.getArrivalTimePlanned().isEmpty()
+                || metroStopEstimate.getDepartureTimePlanned().isEmpty()) {
+            log.warn(
+                    "Stop estimate had no planned arrival or departure time (stop number: {}, route name: {}, operating day: {}, start time: {}, direction: {})",
+                    metroStopEstimate.getStopNumber(), metroEstimate.getRouteName(), metroEstimate.getOperatingDay(),
+                    metroEstimate.getStartTime(), metroEstimate.getDirection());
             return Optional.empty();
         }
 
         boolean isForecastMissing = false;
         switch (type) {
-            case ARRIVAL:
-                stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getArrivalTimePlanned()).toInstant().toEpochMilli());
+            case ARRIVAL :
+                stopEstimateBuilder.setScheduledTimeUtcMs(
+                        ZonedDateTime.parse(metroStopEstimate.getArrivalTimePlanned()).toInstant().toEpochMilli());
 
                 String arrivalTime = !metroStopEstimate.getArrivalTimeMeasured().isEmpty()
-                    ? metroStopEstimate.getArrivalTimeMeasured()
-                    : !metroStopEstimate.getArrivalTimeForecast().isEmpty()
-                        ? metroStopEstimate.getArrivalTimeForecast()
-                        : null;
+                        ? metroStopEstimate.getArrivalTimeMeasured()
+                        : !metroStopEstimate.getArrivalTimeForecast().isEmpty()
+                                ? metroStopEstimate.getArrivalTimeForecast()
+                                : null;
                 if (arrivalTime != null) {
-                    stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(arrivalTime).toInstant().toEpochMilli());
+                    stopEstimateBuilder
+                            .setEstimatedTimeUtcMs(ZonedDateTime.parse(arrivalTime).toInstant().toEpochMilli());
                     if (!metroStopEstimate.getArrivalTimeMeasured().isEmpty()) {
                         stopEstimateBuilder.setObservedTime(true);
                     }
@@ -123,15 +138,17 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                     isForecastMissing = true;
                 }
                 break;
-            case DEPARTURE:
-                stopEstimateBuilder.setScheduledTimeUtcMs(ZonedDateTime.parse(metroStopEstimate.getDepartureTimePlanned()).toInstant().toEpochMilli());
+            case DEPARTURE :
+                stopEstimateBuilder.setScheduledTimeUtcMs(
+                        ZonedDateTime.parse(metroStopEstimate.getDepartureTimePlanned()).toInstant().toEpochMilli());
                 String departureTime = !metroStopEstimate.getDepartureTimeMeasured().isEmpty()
-                    ? metroStopEstimate.getDepartureTimeMeasured()
-                    : !metroStopEstimate.getDepartureTimeForecast().isEmpty()
-                        ? metroStopEstimate.getDepartureTimeForecast()
-                        : null;
+                        ? metroStopEstimate.getDepartureTimeMeasured()
+                        : !metroStopEstimate.getDepartureTimeForecast().isEmpty()
+                                ? metroStopEstimate.getDepartureTimeForecast()
+                                : null;
                 if (departureTime != null) {
-                    stopEstimateBuilder.setEstimatedTimeUtcMs(ZonedDateTime.parse(departureTime).toInstant().toEpochMilli());
+                    stopEstimateBuilder
+                            .setEstimatedTimeUtcMs(ZonedDateTime.parse(departureTime).toInstant().toEpochMilli());
                     if (!metroStopEstimate.getDepartureTimeMeasured().isEmpty()) {
                         stopEstimateBuilder.setObservedTime(true);
                     }
@@ -139,7 +156,7 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
                     isForecastMissing = true;
                 }
                 break;
-            default:
+            default :
                 log.warn("Unrecognized type {}.", type);
                 break;
         }
@@ -153,15 +170,16 @@ public class MetroEstimateStopEstimatesFactory implements IStopEstimatesFactory 
         return Optional.of(stopEstimateBuilder.build());
     }
 
-    private Optional<InternalMessages.StopEstimate.Status> getStopEstimateStatus(MetroAtsProtos.MetroProgress metroProgress) {
+    private Optional<InternalMessages.StopEstimate.Status> getStopEstimateStatus(
+            MetroAtsProtos.MetroProgress metroProgress) {
         switch (metroProgress) {
-            case SCHEDULED:
-            case INPROGRESS:
-            case COMPLETED:
+            case SCHEDULED :
+            case INPROGRESS :
+            case COMPLETED :
                 return Optional.of(InternalMessages.StopEstimate.Status.SCHEDULED);
-            case CANCELLED:
+            case CANCELLED :
                 return Optional.of(InternalMessages.StopEstimate.Status.SKIPPED);
-            default:
+            default :
                 log.warn("Unrecognized MetroProgress {}.", metroProgress);
                 return Optional.empty();
         }
